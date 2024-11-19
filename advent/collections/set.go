@@ -1,4 +1,4 @@
-package advent
+package collections
 
 import (
 	"iter"
