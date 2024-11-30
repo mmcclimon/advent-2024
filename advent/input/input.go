@@ -6,6 +6,8 @@ import (
 	"iter"
 	"os"
 	"strconv"
+
+	"github.com/mmcclimon/advent-2024/advent/assert"
 )
 
 type Input struct {
@@ -19,9 +21,7 @@ func New() *Input {
 	}
 
 	f, err := os.Open(os.Args[1])
-	if err != nil {
-		panic(err)
-	}
+	assert.Nil(err)
 
 	return &Input{f}
 }
