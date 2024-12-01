@@ -3,29 +3,31 @@ package main
 import (
 	"fmt"
 	"slices"
-	"strconv"
-	"strings"
 
 	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/input"
 	"github.com/mmcclimon/advent-2024/advent/mathx"
 )
 
+type Line struct {
+	Left  int
+	Right int
+}
+
 func main() {
 	var left, right []int
 	rmap := make(map[int]int)
 
-	for line := range input.New().Lines() {
-		digits := strings.Fields(line)
+	s := input.NewStrummer()
 
-		l, err := strconv.Atoi(digits[0])
+	for s.HasLines() {
+		var line Line
+		err := s.Decode(&line)
 		assert.Nil(err)
-		left = append(left, l)
 
-		r, err := strconv.Atoi(digits[1])
-		assert.Nil(err)
-		right = append(right, r)
-		rmap[r]++
+		left = append(left, line.Left)
+		right = append(right, line.Right)
+		rmap[line.Right]++
 	}
 
 	slices.Sort(left)

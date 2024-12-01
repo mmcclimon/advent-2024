@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/mmcclimon/advent-2024/advent/assert"
+	"github.com/xdg-go/strum"
 )
 
 type Input struct {
@@ -17,13 +18,17 @@ type Input struct {
 // Get an io.Reader for the first command-line arg; defaulting to stdin.
 func New() *Input {
 	if len(os.Args) == 1 {
-		return &Input{os.Stdin}
+		return &Input{r: os.Stdin}
 	}
 
 	f, err := os.Open(os.Args[1])
 	assert.Nil(err)
 
-	return &Input{f}
+	return &Input{r: f}
+}
+
+func (i *Input) Strummer() *Strummer {
+	return &Strummer{st: strum.NewDecoder(i.r)}
 }
 
 // NB throws away errors.
