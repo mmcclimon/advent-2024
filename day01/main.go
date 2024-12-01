@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"math"
 	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/input"
+	"github.com/mmcclimon/advent-2024/advent/mathx"
 )
 
 func main() {
@@ -34,7 +34,7 @@ func main() {
 	dist, sim := 0, 0
 	for i := range left {
 		l, r := left[i], right[i]
-		dist += int(math.Abs(float64(l - r)))
+		dist += mathx.Abs(l - r)
 		sim += l * rmap[l]
 	}
 
