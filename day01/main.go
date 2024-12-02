@@ -20,7 +20,7 @@ func main() {
 
 	s := input.NewStrummer()
 
-	for s.HasLines() {
+	for s.Next() {
 		var line Line
 		err := s.Decode(&line)
 		assert.Nil(err)

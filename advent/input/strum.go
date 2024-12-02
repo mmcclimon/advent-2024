@@ -15,7 +15,7 @@ func NewStrummer() *Strummer {
 	return &Strummer{st: strum.NewDecoder(New().r)}
 }
 
-func (s *Strummer) HasLines() bool {
+func (s *Strummer) Next() bool {
 	return !s.done
 }
 
