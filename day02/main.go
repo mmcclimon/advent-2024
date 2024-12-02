@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -9,9 +10,7 @@ import (
 	"github.com/mmcclimon/advent-2024/advent/input"
 )
 
-type Report struct {
-	Levels []int
-}
+type Report []int
 
 func main() {
 	safe1, safe2 := 0, 0
@@ -40,20 +39,19 @@ func NewReport(text string) Report {
 		levels = append(levels, n)
 	}
 
-	return Report{levels}
+	return Report(levels)
 }
 
 func (r Report) IsSafe() bool {
 	var hasPos, hasNeg bool
 
-	for i := range len(r.Levels) - 1 {
-		delta := r.Levels[i+1] - r.Levels[i]
-		if delta < -3 || delta > 3 {
-			return false
-		}
+	for i := range len(r) - 1 {
+		delta := r[i+1] - r[i]
 
 		switch {
-		case delta == 0:
+		case delta == 0,
+			delta < -3,
+			delta > 3:
 			return false
 		case delta > 0:
 			hasPos = true
@@ -75,18 +73,10 @@ func (r Report) IsSafe2() bool {
 	}
 
 	// stupid and inefficient
-	for i := range len(r.Levels) {
-		l2 := make([]int, 0, len(r.Levels))
+	for i := range r {
+		l2 := slices.Delete(slices.Clone(r), i, i+1)
 
-		for j := range r.Levels {
-			if i == j {
-				continue
-			}
-
-			l2 = append(l2, r.Levels[j])
-		}
-
-		if (Report{l2}).IsSafe() {
+		if Report(l2).IsSafe() {
 			return true
 		}
 	}
