@@ -10,48 +10,36 @@ import (
 	"github.com/mmcclimon/advent-2024/advent/input"
 )
 
-var (
-	re1 = regexp.MustCompile(`mul\((\d{1,3}),(\d{1,3})\)`)
-	re2 = regexp.MustCompile(`do\(\)|don't\(\)|mul\((\d{1,3}),(\d{1,3})\)`)
-)
-
 func main() {
-	sum1, sum2 := 0, 0
-
-	for line := range input.New().Lines() {
-		sum1 += part1(line)
-		sum2 += part2(line)
-	}
-
-	fmt.Println("part 1:", sum1)
-	fmt.Println("part 2:", sum2)
+	in := input.New().Slurp()
+	fmt.Println("part 1:", part1(in))
+	fmt.Println("part 2:", part2(in))
 }
 
 func part1(line string) int {
-	matches := re1.FindAllStringSubmatch(line, -1)
+	re := regexp.MustCompile(`mul\((\d{1,3}),(\d{1,3})\)`)
 	sum := 0
 
-	for _, m := range matches {
+	for _, m := range re.FindAllStringSubmatch(line, -1) {
 		sum += mul(m[1], m[2])
 	}
 
 	return sum
 }
 
-var enabled = true
-
 func part2(line string) int {
-	matches := re2.FindAllStringSubmatch(line, -1)
+	re := regexp.MustCompile(`do\(\)|don't\(\)|mul\((\d{1,3}),(\d{1,3})\)`)
 	sum := 0
+	do := true
 
-	for _, m := range matches {
+	for _, m := range re.FindAllStringSubmatch(line, -1) {
 		switch {
 		case strings.HasPrefix(m[0], "don't"):
-			enabled = false
+			do = false
 		case strings.HasPrefix(m[0], "do"):
-			enabled = true
+			do = true
 		case strings.HasPrefix(m[0], "mul"):
-			if enabled {
+			if do {
 				sum += mul(m[1], m[2])
 			}
 		default:

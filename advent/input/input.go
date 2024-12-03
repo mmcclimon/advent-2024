@@ -41,6 +41,12 @@ func (i *Input) Lines() iter.Seq[string] {
 	}
 }
 
+func (i *Input) Slurp() string {
+	data, err := io.ReadAll(i.r)
+	assert.Nil(err)
+	return string(data)
+}
+
 func (i *Input) Ints() iter.Seq[int] {
 	return func(yield func(int) bool) {
 		for line := range i.Lines() {
