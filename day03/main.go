@@ -11,42 +11,30 @@ import (
 
 func main() {
 	in := input.New().Slurp()
-	fmt.Println("part 1:", part1(in))
-	fmt.Println("part 2:", part2(in))
-}
 
-func part1(line string) int {
-	re := regexp.MustCompile(`mul\((\d{1,3}),(\d{1,3})\)`)
-	sum := 0
-
-	for _, m := range re.FindAllStringSubmatch(line, -1) {
-		sum += mul(m[1], m[2])
-	}
-
-	return sum
-}
-
-func part2(line string) int {
 	re := regexp.MustCompile(`(do|don't|mul)\((?:(\d+),(\d+))?\)`)
-	sum := 0
 	do := true
+	sum1, sum2 := 0, 0
 
-	for _, m := range re.FindAllStringSubmatch(line, -1) {
+	for _, m := range re.FindAllStringSubmatch(in, -1) {
 		switch m[1] {
-		case "do":
-			do = true
-		case "don't":
-			do = false
+		case "do", "don't":
+			do = m[1] == "do"
+
 		case "mul":
+			res := mul(m[2], m[3])
+			sum1 += res
 			if do {
-				sum += mul(m[2], m[3])
+				sum2 += res
 			}
+
 		default:
 			panic(m)
 		}
 	}
 
-	return sum
+	fmt.Println("part 1:", sum1)
+	fmt.Println("part 2:", sum2)
 }
 
 func mul(m, n string) int {
