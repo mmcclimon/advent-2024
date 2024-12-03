@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/input"
@@ -28,19 +27,19 @@ func part1(line string) int {
 }
 
 func part2(line string) int {
-	re := regexp.MustCompile(`do\(\)|don't\(\)|mul\((\d{1,3}),(\d{1,3})\)`)
+	re := regexp.MustCompile(`(do|don't|mul)\((?:(\d+),(\d+))?\)`)
 	sum := 0
 	do := true
 
 	for _, m := range re.FindAllStringSubmatch(line, -1) {
-		switch {
-		case strings.HasPrefix(m[0], "don't"):
-			do = false
-		case strings.HasPrefix(m[0], "do"):
+		switch m[1] {
+		case "do":
 			do = true
-		case strings.HasPrefix(m[0], "mul"):
+		case "don't":
+			do = false
+		case "mul":
 			if do {
-				sum += mul(m[1], m[2])
+				sum += mul(m[2], m[3])
 			}
 		default:
 			panic(m)
