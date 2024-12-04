@@ -41,6 +41,18 @@ func (i *Input) Lines() iter.Seq[string] {
 	}
 }
 
+// NB throws away errors.
+func (i *Input) EnumerateLines() iter.Seq2[int, string] {
+	scanner := bufio.NewScanner(i.r)
+	return func(yield func(int, string) bool) {
+		i := 0
+		for scanner.Scan() {
+			yield(i, scanner.Text())
+			i++
+		}
+	}
+}
+
 func (i *Input) Slurp() string {
 	data, err := io.ReadAll(i.r)
 	assert.Nil(err)
