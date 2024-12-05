@@ -34,10 +34,10 @@ func main() {
 	sum1, sum2 := 0, 0
 
 	for _, line := range hunks[1] {
-		n := numForLine(toInts(line), rules)
+		n, isOrdered := numForLine(toInts(line), rules)
 		sum1 += n
 
-		if n == 0 {
+		if !isOrdered {
 			sum2 += reorder(toInts(line), rules)
 		}
 	}
@@ -58,7 +58,7 @@ func toInts(line string) []int {
 	return nums
 }
 
-func numForLine(nums []int, rules map[int]collections.Set[int]) int {
+func numForLine(nums []int, rules map[int]collections.Set[int]) (int, bool) {
 	seen := collections.NewSet[int]()
 
 	for _, n := range nums {
@@ -71,12 +71,12 @@ func numForLine(nums []int, rules map[int]collections.Set[int]) int {
 
 		for rule := range forbidden.Iter() {
 			if seen.Contains(rule) {
-				return 0
+				return 0, false
 			}
 		}
 	}
 
-	return nums[len(nums)/2]
+	return nums[len(nums)/2], true
 }
 
 func reorder(nums []int, rules map[int]collections.Set[int]) int {
@@ -91,5 +91,8 @@ func reorder(nums []int, rules map[int]collections.Set[int]) int {
 		}
 	})
 
-	return nums[len(nums)/2]
+	n, isOrdered := numForLine(nums, rules)
+	assert.True(isOrdered, "line is ordered")
+
+	return n
 }

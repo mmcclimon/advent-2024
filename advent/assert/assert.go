@@ -13,3 +13,12 @@ func Nil(err error) {
 	fmt.Println("fatal:", err)
 	os.Exit(1)
 }
+
+func True(cond bool, msg string) {
+	if cond {
+		return
+	}
+
+	fmt.Println("assertion failure:", msg)
+	os.Exit(1)
+}
