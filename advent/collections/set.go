@@ -23,6 +23,11 @@ func (s Set[T]) Add(elems ...T) {
 	}
 }
 
+func (s Set[T]) Contains(elem T) bool {
+	_, ok := s[elem]
+	return ok
+}
+
 func (s Set[T]) Iter() iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for v := range s {
