@@ -34,27 +34,34 @@ func main() {
 	sum1, sum2 := 0, 0
 
 	for _, line := range hunks[1] {
-		n := numForLine(line, rules)
+		n := numForLine(toInts(line), rules)
 		sum1 += n
 
 		if n == 0 {
-			sum2 += reorder(line, rules)
+			sum2 += reorder(toInts(line), rules)
 		}
 	}
 
-	fmt.Println(sum1)
-	fmt.Println(sum2)
+	fmt.Println("part 1:", sum1)
+	fmt.Println("part 2:", sum2)
 }
 
-func numForLine(line string, rules map[int]collections.Set[int]) int {
-	seen := collections.NewSet[int]()
+func toInts(line string) []int {
+	var nums []int
 
-	nums := strings.Split(line, ",")
-
-	for _, num := range nums {
+	for _, num := range strings.Split(line, ",") {
 		n, err := strconv.Atoi(num)
 		assert.Nil(err)
+		nums = append(nums, n)
+	}
 
+	return nums
+}
+
+func numForLine(nums []int, rules map[int]collections.Set[int]) int {
+	seen := collections.NewSet[int]()
+
+	for _, n := range nums {
 		seen.Add(n)
 
 		forbidden, ok := rules[n]
@@ -69,36 +76,15 @@ func numForLine(line string, rules map[int]collections.Set[int]) int {
 		}
 	}
 
-	middle := nums[len(nums)/2]
-	n, _ := strconv.Atoi(middle)
-	return n
+	return nums[len(nums)/2]
 }
 
-func reorder(line string, rules map[int]collections.Set[int]) int {
-	var nums []int
-	for _, num := range strings.Split(line, ",") {
-		n, err := strconv.Atoi(num)
-		assert.Nil(err)
-		nums = append(nums, n)
-	}
-
+func reorder(nums []int, rules map[int]collections.Set[int]) int {
 	slices.SortFunc(nums, func(a, b int) int {
-		aRules, ok := rules[a]
-		if !ok {
-			// if no a, then b should come first
-			return 1
-		}
-
-		bRules, ok := rules[b]
-		if !ok {
-			// if no b, then a should come first
-			return -1
-		}
-
 		switch {
-		case aRules.Contains(b):
+		case rules[a].Contains(b):
 			return -1
-		case bRules.Contains(a):
+		case rules[b].Contains(a):
 			return 1
 		default:
 			return 0

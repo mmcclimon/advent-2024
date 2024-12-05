@@ -24,6 +24,10 @@ func (s Set[T]) Add(elems ...T) {
 }
 
 func (s Set[T]) Contains(elem T) bool {
+	if s == nil {
+		return false
+	}
+
 	_, ok := s[elem]
 	return ok
 }
