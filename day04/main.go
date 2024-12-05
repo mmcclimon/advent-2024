@@ -29,7 +29,6 @@ func main() {
 		if l == 'A' {
 			found2 += check2(grid, k)
 		}
-
 	}
 
 	fmt.Println("part 1:", found1)
@@ -38,14 +37,17 @@ func main() {
 
 func check1(grid map[rc]rune, start rc) int {
 	found := 0
+	r, c := start.r, start.c
+
+	chars := make([]rune, 4)
 
 	for rd := -1; rd <= 1; rd++ {
 		for cd := -1; cd <= 1; cd++ {
-			if rd == 0 && cd == 0 {
-				continue
+			for i := range 4 {
+				chars[i] = grid[rc{r + (i * rd), c + (i * cd)}]
 			}
 
-			if check_delta(grid, start, rd, cd) {
+			if string(chars) == "XMAS" {
 				found++
 			}
 		}
@@ -54,25 +56,15 @@ func check1(grid map[rc]rune, start rc) int {
 	return found
 }
 
-func check_delta(grid map[rc]rune, start rc, rd, cd int) bool {
-	r, c := start.r, start.c
-
-	chars := make([]rune, 4)
-
-	for i := range 4 {
-		chars[i] = grid[rc{r + (i * rd), c + (i * cd)}]
-	}
-
-	return string(chars) == "XMAS"
-}
-
 func check2(grid map[rc]rune, start rc) int {
 	r, c := start.r, start.c
 
 	se := string([]rune{grid[rc{r - 1, c - 1}], grid[start], grid[rc{r + 1, c + 1}]})
 	sw := string([]rune{grid[rc{r - 1, c + 1}], grid[start], grid[rc{r + 1, c - 1}]})
 
-	if (se == "MAS" || se == "SAM") && (sw == "MAS" || sw == "SAM") {
+	isMas := func(s string) bool { return s == "MAS" || s == "SAM" }
+
+	if isMas(se) && isMas(sw) {
 		return 1
 	}
 
