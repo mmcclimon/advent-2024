@@ -3,10 +3,9 @@ package main
 import (
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 
-	"github.com/mmcclimon/advent-2024/advent/assert"
+	"github.com/mmcclimon/advent-2024/advent/conv"
 	"github.com/mmcclimon/advent-2024/advent/input"
 )
 
@@ -32,13 +31,7 @@ func main() {
 }
 
 func NewReport(text string) Report {
-	var levels []int
-	for _, data := range strings.Fields(text) {
-		n, err := strconv.Atoi(data)
-		assert.Nil(err)
-		levels = append(levels, n)
-	}
-
+	levels := conv.ToInts(strings.Fields(text))
 	return Report(levels)
 }
 

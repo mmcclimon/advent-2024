@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 
 	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/collections"
+	"github.com/mmcclimon/advent-2024/advent/conv"
 	"github.com/mmcclimon/advent-2024/advent/input"
 )
 
@@ -18,11 +18,8 @@ func main() {
 
 	for _, line := range hunks[0] {
 		bits := strings.Split(line, "|")
-		l, err := strconv.Atoi(bits[0])
-		assert.Nil(err)
-
-		r, err := strconv.Atoi(bits[1])
-		assert.Nil(err)
+		l := conv.Atoi(bits[0])
+		r := conv.Atoi(bits[1])
 
 		if _, ok := rules[l]; !ok {
 			rules[l] = collections.NewSet[int]()
@@ -34,11 +31,13 @@ func main() {
 	sum1, sum2 := 0, 0
 
 	for _, line := range hunks[1] {
-		n, isOrdered := numForLine(toInts(line), rules)
-		sum1 += n
+		nums := conv.ToInts(strings.Split(line, ","))
+
+		mid, isOrdered := middleForLine(nums, rules)
+		sum1 += mid
 
 		if !isOrdered {
-			sum2 += reorder(toInts(line), rules)
+			sum2 += reorder(nums, rules)
 		}
 	}
 
@@ -46,19 +45,7 @@ func main() {
 	fmt.Println("part 2:", sum2)
 }
 
-func toInts(line string) []int {
-	var nums []int
-
-	for _, num := range strings.Split(line, ",") {
-		n, err := strconv.Atoi(num)
-		assert.Nil(err)
-		nums = append(nums, n)
-	}
-
-	return nums
-}
-
-func numForLine(nums []int, rules map[int]collections.Set[int]) (int, bool) {
+func middleForLine(nums []int, rules map[int]collections.Set[int]) (int, bool) {
 	seen := collections.NewSet[int]()
 
 	for _, n := range nums {
@@ -91,8 +78,8 @@ func reorder(nums []int, rules map[int]collections.Set[int]) int {
 		}
 	})
 
-	n, isOrdered := numForLine(nums, rules)
+	mid, isOrdered := middleForLine(nums, rules)
 	assert.True(isOrdered, "line is ordered")
 
-	return n
+	return mid
 }
