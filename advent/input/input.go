@@ -36,7 +36,9 @@ func (i *Input) Lines() iter.Seq[string] {
 	scanner := bufio.NewScanner(i.r)
 	return func(yield func(string) bool) {
 		for scanner.Scan() {
-			yield(scanner.Text())
+			if !yield(scanner.Text()) {
+				return
+			}
 		}
 	}
 }
