@@ -41,3 +41,9 @@ func (s Set[T]) Iter() iter.Seq[T] {
 		}
 	}
 }
+
+func (s Set[T]) Extend(other Set[T]) {
+	for elem := range other.Iter() {
+		s.Add(elem)
+	}
+}
