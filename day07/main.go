@@ -24,23 +24,20 @@ func main() {
 		target := conv.Atoi(fields[0][:len(fields[0])-1])
 
 		nums := conv.ToInts(fields[1:])
-		// fmt.Println(target, nums)
 
 		if check(target, nums) {
-			// fmt.Println("yay!", target)
 			sum1 += target
-			// sum2 += target
-			// continue
+			sum2 += target
+			continue
 		}
 
 		if check2(target, nums) {
-			// fmt.Println("yay!", target)
 			sum2 += target
 		}
 	}
 
-	fmt.Println(sum1)
-	fmt.Println(sum2)
+	fmt.Println("part 1:", sum1)
+	fmt.Println("part 2:", sum2)
 }
 
 func check(target int, nums []int) bool {
@@ -93,29 +90,41 @@ func check2(target int, nums []int) bool {
 	return false
 }
 
+type memoKey struct {
+	n          int
+	withConcat bool
+}
+
+var memo = make(map[memoKey][][]Operator)
+
 func generateOps(n int, withConcat bool) [][]Operator {
+	key := memoKey{n, withConcat}
+	have, ok := memo[key]
+	if ok {
+		return have
+	}
+
 	ops := [][]Operator{nil}
 
 	for range n {
 		var tmp [][]Operator
 
 		for _, list := range ops {
-			add := make([]Operator, len(list)+1)
+			idx := len(list)
+			add := make([]Operator, idx+1)
 			copy(add, list)
-			add[len(add)-1] = Add
+			add[idx] = Add
 
-			mul := make([]Operator, len(list)+1)
+			mul := make([]Operator, idx+1)
 			copy(mul, list)
-			mul[len(mul)-1] = Mul
-
-			// fmt.Println("HEY", list, nums)
+			mul[idx] = Mul
 
 			tmp = append(tmp, add, mul)
 
 			if withConcat {
-				concat := make([]Operator, len(list)+1)
+				concat := make([]Operator, idx+1)
 				copy(concat, list)
-				concat[len(concat)-1] = Concat
+				concat[idx] = Concat
 				tmp = append(tmp, concat)
 			}
 		}
@@ -123,5 +132,6 @@ func generateOps(n int, withConcat bool) [][]Operator {
 		ops = tmp
 	}
 
+	memo[key] = ops
 	return ops
 }
