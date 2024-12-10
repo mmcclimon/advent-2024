@@ -28,6 +28,10 @@ func (d *Deque[T]) Iter() iter.Seq[T] {
 	}
 }
 
+func (d *Deque[T]) Len() int {
+	return d.length
+}
+
 func (d *Deque[T]) ToSlice() []T {
 	ret := make([]T, 0, d.length)
 	for val := range d.Iter() {
