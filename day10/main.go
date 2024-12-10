@@ -7,6 +7,7 @@ import (
 	"github.com/mmcclimon/advent-2024/advent/collections"
 	"github.com/mmcclimon/advent-2024/advent/conv"
 	"github.com/mmcclimon/advent-2024/advent/input"
+	"github.com/mmcclimon/advent-2024/advent/operator"
 )
 
 type rc struct {
@@ -27,70 +28,51 @@ func main() {
 		}
 	}
 
-	part1(grid)
-	part2(grid)
-}
-
-func part1(grid map[rc]int) {
-	sum := 0
+	p1, p2 := 0, 0
 
 	for k, v := range grid {
 		if v != 0 {
 			continue
 		}
 
-		sum += scoreFor(grid, k, false)
+		p1 += scoreFor(grid, k, false)
+		p2 += scoreFor(grid, k, true)
 	}
 
-	fmt.Println("part 1:", sum)
-}
-
-func part2(grid map[rc]int) {
-	sum := 0
-
-	for k, v := range grid {
-		if v != 0 {
-			continue
-		}
-
-		sum += scoreFor(grid, k, true)
-	}
-
-	fmt.Println("part 2:", sum)
+	fmt.Println("part 1:", p1)
+	fmt.Println("part 2:", p2)
 }
 
 func scoreFor(grid map[rc]int, start rc, part2 bool) int {
-	// bfs
-	q := collections.NewDeque[rc]()
+	// dfs
+	s := collections.NewDeque[rc]()
 	seen := collections.NewSet[rc]()
 
-	q.Append(start)
+	s.Append(start)
 
-	score := 0
+	numPaths := 0
+	ends := collections.NewSet[rc]()
 
-	for q.Len() > 0 {
-		pos, err := q.PopLeft()
+	for s.Len() > 0 {
+		pos, err := s.Pop()
 		assert.Nil(err)
 
-		n := grid[pos]
-		if n == 9 {
-			score++
+		if grid[pos] == 9 {
+			ends.Add(pos)
+			numPaths++
 			continue
 		}
 
+		if !seen.Contains(pos) {
+			seen.Add(pos)
+		}
+
 		for _, coords := range neighbors(grid, pos) {
-			if grid[coords] != n+1 || seen.Contains(coords) {
-				continue
-			}
-
-			// fmt.Printf("looking at %+v, num=%d\n", coords, grid[coords])
-
-			seen.Add(coords)
-			q.Append(coords)
+			s.Append(coords)
 		}
 	}
 
-	return score
+	return operator.CrummyTernary(part2, numPaths, len(ends))
 }
 
 func neighbors(grid map[rc]int, start rc) []rc {
@@ -102,8 +84,8 @@ func neighbors(grid map[rc]int, start rc) []rc {
 		{start.r, start.c - 1},
 		{start.r, start.c + 1},
 	} {
-		_, ok := grid[candidate]
-		if ok {
+		n, ok := grid[candidate]
+		if ok && n == grid[start]+1 {
 			ret = append(ret, candidate)
 		}
 	}
