@@ -2,42 +2,50 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"strings"
 
 	"github.com/mmcclimon/advent-2024/advent/conv"
 	"github.com/mmcclimon/advent-2024/advent/input"
+	"github.com/mmcclimon/advent-2024/advent/mathx"
 )
 
 func main() {
 	raw := strings.TrimSpace(input.New().Slurp())
+	nums := make(map[int]int)
 
-	nums := conv.ToInts(strings.Fields(raw))
+	for _, n := range strings.Fields(raw) {
+		nums[conv.Atoi(n)]++
+	}
 
-	numSteps := 25
+	numSteps := 75
 
 	for i := range numSteps {
-		fmt.Println(i)
-		tmp := make([]int, 0, len(nums)*2)
+		tmp := make(map[int]int, len(nums)*2)
 
-		for _, n := range nums {
+		for n, count := range nums {
 			s := fmt.Sprint(n)
 
 			switch {
 			case n == 0:
-				tmp = append(tmp, 1)
+				tmp[1] += count
 
 			case len(s)%2 == 0:
 				mid := len(s) / 2
-				tmp = append(tmp, conv.Atoi(s[0:mid]), conv.Atoi(s[mid:]))
+				tmp[conv.Atoi(s[0:mid])] += count
+				tmp[conv.Atoi(s[mid:])] += count
 
 			default:
-				tmp = append(tmp, n*2024)
+				tmp[n*2024] += count
 			}
 		}
 
 		nums = tmp
-		// fmt.Println(nums)
+
+		if i == 24 {
+			fmt.Println("part 1:", mathx.Sum(maps.Values(nums)))
+		}
 	}
 
-	fmt.Println(len(nums))
+	fmt.Println("part 2:", mathx.Sum(maps.Values(nums)))
 }
