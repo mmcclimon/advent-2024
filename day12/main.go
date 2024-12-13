@@ -17,8 +17,8 @@ type stats struct {
 }
 
 func main() {
-	grid := make(map[rc]string)
-	plots := make(map[rc]int)
+	grid := make(map[rc]string) // pos => letter
+	plots := make(map[rc]int)   // pos => plot id
 
 	for r, line := range input.New().EnumerateLines() {
 		for c, char := range line {
@@ -33,6 +33,7 @@ func main() {
 			continue // already seen this one
 		}
 
+		// find all connected plots
 		for item := range search(grid, pos) {
 			plots[item] = id
 		}
@@ -40,6 +41,11 @@ func main() {
 		id++
 	}
 
+	part1(grid, plots)
+	part2(plots)
+}
+
+func part1(grid map[rc]string, plots map[rc]int) {
 	calc := make(map[int]stats)
 
 	for pos, id := range plots {
@@ -59,12 +65,111 @@ func main() {
 	fmt.Println("part 1:", total)
 }
 
+func part2(plots map[rc]int) {
+	// First, key by id.
+	byID := make(map[int][]rc)
+
+	for pos, id := range plots {
+		byID[id] = append(byID[id], pos)
+	}
+
+	total := 0
+
+	// SURELY there is a better way to do this, but.
+	// For every distinct group...
+	for id, positions := range byID {
+		// Make a set of the corners, keyed by upper-left coordinate
+		corners := collections.NewSet[rc]()
+
+		for _, pos := range positions {
+			var (
+				up       = rc{pos.r - 1, pos.c}
+				down     = rc{pos.r + 1, pos.c}
+				left     = rc{pos.r, pos.c - 1}
+				right    = rc{pos.r, pos.c + 1}
+				hasUp    = plots[up] == id
+				hasDown  = plots[down] == id
+				hasLeft  = plots[left] == id
+				hasRight = plots[right] == id
+			)
+
+			if !hasLeft && !hasUp {
+				corners.Add(rc{pos.r, pos.c}) // outside corner, top left
+			}
+
+			if !hasUp && !hasRight {
+				corners.Add(rc{pos.r, pos.c + 1}) // outside corner, top right
+			}
+
+			if !hasRight && !hasDown {
+				corners.Add(rc{pos.r + 1, pos.c + 1}) // outside corner, bottom right
+			}
+
+			if !hasDown && !hasLeft {
+				corners.Add(rc{pos.r + 1, pos.c}) // outside corner, bottom left
+			}
+
+			// Now, we also need to check for inside corners. We do this by finding
+			// all the points outside this polygon, and checking if there's an
+			// inside corner.
+			for _, neighb := range []rc{up, down, left, right} {
+				if plots[neighb] == id {
+					continue // this is part of the shape, we don't care
+				}
+
+				var (
+					u = plots[rc{neighb.r - 1, neighb.c}] == id
+					d = plots[rc{neighb.r + 1, neighb.c}] == id
+					l = plots[rc{neighb.r, neighb.c - 1}] == id
+					r = plots[rc{neighb.r, neighb.c + 1}] == id
+				)
+
+				if u && l {
+					corners.Add(rc{neighb.r, neighb.c}) // inside corner, top left
+				}
+
+				if u && r {
+					corners.Add(rc{neighb.r, neighb.c + 1}) // inside corner, top right
+				}
+
+				if r && d {
+					corners.Add(rc{neighb.r + 1, neighb.c + 1}) // inside corner, bottom right
+				}
+
+				if d && l {
+					corners.Add(rc{neighb.r + 1, neighb.c}) // inside corner, bottom left
+				}
+
+			}
+		}
+
+		numCorners := len(corners)
+
+		// Now, we have to double count inside corners, maybe.
+		for corner := range corners.Iter() {
+			tr := plots[rc{corner.r - 1, corner.c}]
+			tl := plots[rc{corner.r - 1, corner.c - 1}]
+			br := plots[rc{corner.r, corner.c}]
+			bl := plots[rc{corner.r, corner.c - 1}]
+
+			// This is if (ne/sw diagonal || nw/se diagonal)
+			if (tr == id && tr == bl && tr != tl && tr != br) ||
+				(tl == id && tl == br && tl != tr && tl != bl) {
+				numCorners++
+			}
+		}
+
+		total += len(positions) * numCorners
+	}
+
+	fmt.Println("part 2:", total)
+}
+
+// This is just a breadth-first search; returns a set of all the coordinates
+// in the starting plot (including the start)
 func search(grid map[rc]string, start rc) collections.Set[rc] {
-	// dfs
 	q := collections.NewDeque[rc]()
 	seen := collections.NewSet[rc]()
-
-	// fmt.Println("looking at", grid[start], start)
 
 	q.Append(start)
 	seen.Add(start)
@@ -83,11 +188,10 @@ func search(grid map[rc]string, start rc) collections.Set[rc] {
 		}
 	}
 
-	// fmt.Println("found", slices.Collect(maps.Keys(seen)))
-
 	return seen
 }
 
+// Returns a slice of connected neighbors (same letter in the grid)
 func neighbors(grid map[rc]string, start rc) []rc {
 	ret := make([]rc, 0, 4)
 
