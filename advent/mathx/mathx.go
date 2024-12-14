@@ -2,16 +2,20 @@ package mathx
 
 import (
 	"iter"
-	"math"
+
+	"golang.org/x/exp/constraints"
 )
 
 type Numeric interface {
-	int | uint | int64 | uint64 |
-		float32 | float64
+	constraints.Integer | constraints.Float
 }
 
 func Abs[T Numeric](n T) T {
-	return T(math.Abs(float64(n)))
+	if n < 0 {
+		return -n
+	}
+
+	return n
 }
 
 func Sum[T Numeric](seq iter.Seq[T]) T {
@@ -21,4 +25,16 @@ func Sum[T Numeric](seq iter.Seq[T]) T {
 	}
 
 	return sum
+}
+
+func GCD[T constraints.Integer](m, n T) T {
+	if n == 0 {
+		return m
+	}
+
+	return GCD(n, m%n)
+}
+
+func LCM[T constraints.Integer](m, n T) T {
+	return Abs(m*n) / GCD(m, n)
 }
