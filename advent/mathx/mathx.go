@@ -38,3 +38,8 @@ func GCD[T constraints.Integer](m, n T) T {
 func LCM[T constraints.Integer](m, n T) T {
 	return Abs(m*n) / GCD(m, n)
 }
+
+// omg why can't all languages just provide this
+func Mod[T constraints.Integer](m, n T) T {
+	return (m%n + n) % n
+}
