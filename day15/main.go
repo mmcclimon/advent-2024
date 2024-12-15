@@ -1,23 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"slices"
 
 	"github.com/mmcclimon/advent-2024/advent/input"
-	"github.com/mmcclimon/advent-2024/advent/operator"
 )
 
 type xy struct {
 	x, y int
-}
-
-type Map map[xy]MapObject
-
-type MapObject interface {
-	fmt.Stringer
-	Move(Map, rune) bool
-	IsBox() bool
 }
 
 func main() {
@@ -27,25 +17,17 @@ func main() {
 	part2(hunks)
 }
 
-//nolint:unused
-func printGrid(grid Map, wide bool) {
-	maxX, maxY := -1, -1
-	for k := range grid {
-		maxX = max(maxX, k.x)
-		maxY = max(maxY, k.y)
+func xyForDir(x, y int, dir rune) xy {
+	switch dir {
+	case '^':
+		return xy{x, y - 1}
+	case 'v':
+		return xy{x, y + 1}
+	case '<':
+		return xy{x - 1, y}
+	case '>':
+		return xy{x + 1, y}
+	default:
+		panic("unreachable")
 	}
-
-	for y := range maxY + 1 {
-		for x := range maxX + 1 {
-			obj := grid[xy{x, y}]
-			if obj == nil {
-				fmt.Print(operator.CrummyTernary(wide, "..", "."))
-			} else {
-				fmt.Print(obj)
-			}
-		}
-		fmt.Print("\n")
-	}
-
-	fmt.Println("")
 }

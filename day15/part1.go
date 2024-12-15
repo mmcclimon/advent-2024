@@ -6,15 +6,21 @@ import (
 	"strings"
 )
 
+type Map map[xy]MapObject
+
+type MapObject interface {
+	fmt.Stringer
+	Move(Map, rune) bool
+	IsBox() bool
+}
+
 type Movable struct {
 	x, y int
 	char rune
 }
 
-type Wall struct {
-	//nolint:unused
-	x, y int
-}
+// Wall doesn't need to store its own coordinates because it doesn't ever move.
+type Wall struct{}
 
 func part1(hunks [][]string) {
 	grid := make(Map)
@@ -25,7 +31,7 @@ func part1(hunks [][]string) {
 			var obj MapObject
 			switch char {
 			case '#':
-				obj = &Wall{x, y}
+				obj = &Wall{}
 			case '@':
 				robot = &Movable{x, y, '@'}
 				obj = robot
@@ -61,26 +67,10 @@ func part1(hunks [][]string) {
 }
 
 func (m *Movable) String() string { return string(m.char) }
-func (_ *Wall) String() string    { return "#" }
-
-func (m *Movable) IsBox() bool { return m.char == 'O' }
-func (_ *Wall) IsBox() bool    { return false }
+func (m *Movable) IsBox() bool    { return m.char == 'O' }
 
 func (m *Movable) Move(grid Map, dir rune) bool {
-	var next xy
-	switch dir {
-	case '^':
-		next = xy{m.x, m.y - 1}
-	case 'v':
-		next = xy{m.x, m.y + 1}
-	case '<':
-		next = xy{m.x - 1, m.y}
-	case '>':
-		next = xy{m.x + 1, m.y}
-	default:
-		panic("bad direction")
-	}
-
+	next := xyForDir(m.x, m.y, dir)
 	obj := grid[next]
 
 	canMove := obj == nil || obj.Move(grid, dir)
@@ -95,6 +85,29 @@ func (m *Movable) Move(grid Map, dir rune) bool {
 	return true
 }
 
-func (_ *Wall) Move(grid Map, dir rune) bool {
-	return false
+func (_ *Wall) String() string               { return "#" }
+func (_ *Wall) IsBox() bool                  { return false }
+func (_ *Wall) Move(grid Map, dir rune) bool { return false }
+
+//nolint:unused
+func printGrid(grid Map) {
+	maxX, maxY := -1, -1
+	for k := range grid {
+		maxX = max(maxX, k.x)
+		maxY = max(maxY, k.y)
+	}
+
+	for y := range maxY + 1 {
+		for x := range maxX + 1 {
+			obj := grid[xy{x, y}]
+			if obj == nil {
+				fmt.Print(".")
+			} else {
+				fmt.Print(obj)
+			}
+		}
+		fmt.Print("\n")
+	}
+
+	fmt.Println("")
 }
