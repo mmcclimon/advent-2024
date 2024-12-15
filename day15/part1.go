@@ -12,13 +12,8 @@ type Movable struct {
 }
 
 type Wall struct {
+	//nolint:unused
 	x, y int
-}
-
-type MapObject interface {
-	fmt.Stringer
-	Move(Map, rune) bool
-	IsBox() bool
 }
 
 func part1(hunks [][]string) {
