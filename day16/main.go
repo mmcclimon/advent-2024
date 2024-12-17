@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/collections"
 	"github.com/mmcclimon/advent-2024/advent/input"
 )
@@ -52,7 +53,7 @@ func (n node) String() string {
 
 func findShortest(grid map[rc]rune, start rc) {
 	dist := make(map[node]int, len(grid))
-	prev := make(map[rc]node, len(grid))
+	prev := make(map[rc][]rc, len(grid))
 
 	q := collections.NewSet[node]()
 
@@ -71,10 +72,10 @@ func findShortest(grid map[rc]rune, start rc) {
 	dist[node{start, East}] = 0
 
 	for len(q) > 0 {
-		fmt.Println(len(q))
+		// fmt.Println(len(q))
 		var u node
 		for pos := range q.Iter() {
-			if u == (node{}) || dist[pos] < dist[u] {
+			if u == (node{}) || dist[pos] <= dist[u] {
 				u = pos
 			}
 		}
@@ -82,14 +83,15 @@ func findShortest(grid map[rc]rune, start rc) {
 		q.Delete(u)
 
 		if grid[u.pos] == 'E' {
-			fmt.Println("found it!")
+			fmt.Println("found it!", u)
 			fmt.Println(dist[u])
-			// spew.Dump(dist)
-			// spew.Dump(prev)
+			part2(prev, start, u.pos)
 			return
 		}
 
 		facing := u.dir
+
+		// fmt.Printf("looking at %+v, facing %s\n", u.pos, u.dir)
 
 		for _, v := range neighbors(grid, u.pos) {
 			thisDir := dirFor(u.pos, v)
@@ -108,7 +110,8 @@ func findShortest(grid map[rc]rune, start rc) {
 					thisDir == South && facing == North ||
 					thisDir == East && facing == West ||
 					thisDir == West && facing == East {
-					thisDist += 1000
+					continue
+					// thisDist += 1000
 				}
 			}
 
@@ -117,7 +120,7 @@ func findShortest(grid map[rc]rune, start rc) {
 			alt := dist[u] + thisDist
 			if dist[next] == 0 || alt < dist[next] {
 				dist[next] = alt
-				prev[v] = u
+				prev[v] = append(prev[v], u.pos)
 			}
 		}
 	}
@@ -157,4 +160,53 @@ func dirFor(from, to rc) Direction {
 		fmt.Println("bad direction", from, to)
 		panic("bad direction")
 	}
+}
+
+func part2(prev map[rc][]rc, start, end rc) {
+	fmt.Println(start, end)
+
+	// spew.Dump(prev)
+	// return
+
+	s := collections.NewDeque[rc]()
+	seen := collections.NewSet[rc]()
+
+	s.Append(end)
+
+	numPaths := 0
+
+	for s.Len() > 0 {
+		pos, err := s.Pop()
+		assert.Nil(err)
+
+		fmt.Println("looking at", pos)
+
+		if pos == start {
+			numPaths++
+			seen.Add(pos)
+			continue
+		}
+
+		if !seen.Contains(pos) {
+			seen.Add(pos)
+			for _, coords := range prev[pos] {
+				s.Append(coords)
+			}
+		}
+	}
+
+	for r := range 14 {
+		for c := range 14 {
+			if seen.Contains(rc{r, c}) {
+				fmt.Print("O")
+			} else {
+				fmt.Print(".")
+			}
+		}
+		fmt.Print("\n")
+	}
+
+	fmt.Println(len(seen))
+
+	// return operator.CrummyTernary(part2, numPaths, len(ends))
 }
