@@ -23,6 +23,10 @@ func (s Set[T]) Add(elems ...T) {
 	}
 }
 
+func (s Set[T]) Delete(elem T) {
+	delete(s, elem)
+}
+
 func (s Set[T]) Contains(elem T) bool {
 	if s == nil {
 		return false
