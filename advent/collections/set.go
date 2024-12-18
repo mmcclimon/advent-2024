@@ -36,6 +36,14 @@ func (s Set[T]) Contains(elem T) bool {
 	return ok
 }
 
+func (s Set[T]) Peek() T {
+	for item := range s.Iter() {
+		return item
+	}
+
+	panic("cannot peek an empty set")
+}
+
 func (s Set[T]) Iter() iter.Seq[T] {
 	return func(yield func(T) bool) {
 		for v := range s {
