@@ -18,37 +18,40 @@ const (
 )
 
 func main() {
-	grid := collections.NewSet[xy]()
-
-	done := 0
+	lines := make([]xy, 0, size*4)
 
 	for line := range input.New().Lines() {
 		pos := conv.ToInts(strings.Split(line, ","))
-		grid.Add(xy{pos[0], pos[1]})
+		lines = append(lines, xy{pos[0], pos[1]})
+	}
 
-		done++
+	left := nItems
+	right := len(lines) - 1
 
-		if done < nItems {
-			continue
-		}
+	// part 1
+	grid := collections.NewSet(lines[:left]...)
+	dist := shortestPath(grid, size)
+	fmt.Println("part 1:", dist)
 
+	// binary search on the input to find the best one.
+	for left <= right {
+		m := (left + right) / 2
+		grid := collections.NewSet(lines[:m]...)
 		dist := shortestPath(grid, size)
 
-		if done == nItems {
-			fmt.Println("part 1:", dist)
-		}
-
 		if dist == -1 {
-			fmt.Println("part 2:", line)
-			break
+			right = m - 1
+		} else {
+			left = m + 1
 		}
 	}
+
+	fmt.Println("part 2:", lines[right])
 }
 
 func shortestPath(grid collections.Set[xy], size int) int {
 	// dijkstra, much more straightforward than day 16
 	dist := make(map[xy]int, size*size)
-	prev := make(map[xy]xy, size*size)
 
 	q := collections.NewMinQueue(func(a, b xy) int {
 		return cmp.Compare(dist[a], dist[b])
@@ -71,7 +74,6 @@ func shortestPath(grid collections.Set[xy], size int) int {
 			if dist[v] == 0 || alt < dist[v] {
 				dist[v] = alt
 				q.Insert(v)
-				prev[v] = cur
 			}
 		}
 	}
