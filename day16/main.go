@@ -1,8 +1,8 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
-	"math"
 
 	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/collections"
@@ -53,80 +53,57 @@ func (n node) String() string {
 
 func findShortest(grid map[rc]rune, start rc) {
 	dist := make(map[node]int, len(grid))
-	prev := make(map[rc][]rc, len(grid))
+	prev := make(map[node][]node, len(grid))
 
-	q := collections.NewSet[node]()
+	q := collections.NewMinQueue(func(a, b node) int {
+		return cmp.Compare(dist[a], dist[b])
+	})
 
-	for pos, char := range grid {
-		if char == '#' {
-			continue
-		}
+	first := node{start, East}
+	dist[first] = 0
+	q.Insert(first)
 
-		for _, dir := range []Direction{North, South, East, West} {
-			n := node{pos, dir}
-			q.Add(n)
-			dist[n] = math.MaxInt
-		}
-	}
+	for q.Len() > 0 {
+		cur := q.ExtractMin()
 
-	dist[node{start, East}] = 0
-
-	for len(q) > 0 {
-		// fmt.Println(len(q))
-		var u node
-		for pos := range q.Iter() {
-			if u == (node{}) || dist[pos] <= dist[u] {
-				u = pos
-			}
-		}
-
-		q.Delete(u)
-
-		if grid[u.pos] == 'E' {
-			fmt.Println("found it!", u)
-			fmt.Println(dist[u])
-			part2(prev, start, u.pos)
+		if grid[cur.pos] == 'E' {
+			fmt.Println("part 1:", dist[cur])
+			part2(prev, first, cur)
 			return
 		}
 
-		facing := u.dir
+		facing := cur.dir
 
-		// fmt.Printf("looking at %+v, facing %s\n", u.pos, u.dir)
-
-		for _, v := range neighbors(grid, u.pos) {
-			thisDir := dirFor(u.pos, v)
+		for _, v := range neighbors(grid, cur.pos, facing) {
+			thisDir := dirFor(cur.pos, v)
 			next := node{v, thisDir}
-
-			if !q.Contains(next) {
-				continue
-			}
 
 			thisDist := 1
 			if thisDir != facing {
 				thisDist += 1000
-
-				// stupid
-				if thisDir == North && facing == South ||
-					thisDir == South && facing == North ||
-					thisDir == East && facing == West ||
-					thisDir == West && facing == East {
-					continue
-					// thisDist += 1000
-				}
 			}
 
-			// fmt.Printf("  facing %s, want to face %s to get to %+v\n", facing, thisDir, v)
-			// fmt.Printf("  dist so far = %d, thisDist = %d\n", dist[u], thisDist)
-			alt := dist[u] + thisDist
-			if dist[next] == 0 || alt < dist[next] {
-				dist[next] = alt
-				prev[v] = append(prev[v], u.pos)
+			alt := dist[cur] + thisDist
+			existingDist, ok := dist[next]
+			if ok && alt > existingDist {
+				continue
 			}
+
+			// If this is equal to the one we already know about, add it to the
+			// list; if it's better (or we don't have one at all), make a new list.
+			if alt == existingDist {
+				prev[next] = append(prev[next], cur)
+			} else {
+				prev[next] = []node{cur}
+			}
+
+			dist[next] = alt
+			q.Insert(next)
 		}
 	}
 }
 
-func neighbors(grid map[rc]rune, node rc) []rc {
+func neighbors(grid map[rc]rune, node rc, facing Direction) []rc {
 	var ret []rc
 	for _, pos := range []rc{
 		{node.r + 1, node.c},
@@ -134,13 +111,34 @@ func neighbors(grid map[rc]rune, node rc) []rc {
 		{node.r, node.c + 1},
 		{node.r, node.c - 1},
 	} {
-		char := grid[pos]
-		if char == '.' || char == 'E' || char == 'S' {
-			ret = append(ret, pos)
+		char, ok := grid[pos]
+		if char == '#' || !ok {
+			continue
 		}
+
+		dir := dirFor(node, pos)
+		if dir == facing.opposite() {
+			continue
+		}
+		ret = append(ret, pos)
 	}
 
 	return ret
+}
+
+func (d Direction) opposite() Direction {
+	switch d {
+	case North:
+		return South
+	case South:
+		return North
+	case East:
+		return West
+	case West:
+		return East
+	default:
+		panic("unreachable")
+	}
 }
 
 func dirFor(from, to rc) Direction {
@@ -162,14 +160,11 @@ func dirFor(from, to rc) Direction {
 	}
 }
 
-func part2(prev map[rc][]rc, start, end rc) {
-	fmt.Println(start, end)
-
-	// spew.Dump(prev)
-	// return
-
-	s := collections.NewDeque[rc]()
-	seen := collections.NewSet[rc]()
+func part2(prev map[node][]node, start, end node) {
+	// This is a depth-first search on the previous graph, starting from the end
+	// and working back to the beginning.
+	s := collections.NewDeque[node]()
+	seen := collections.NewSet[node]()
 
 	s.Append(end)
 
@@ -178,8 +173,6 @@ func part2(prev map[rc][]rc, start, end rc) {
 	for s.Len() > 0 {
 		pos, err := s.Pop()
 		assert.Nil(err)
-
-		fmt.Println("looking at", pos)
 
 		if pos == start {
 			numPaths++
@@ -195,18 +188,12 @@ func part2(prev map[rc][]rc, start, end rc) {
 		}
 	}
 
-	for r := range 14 {
-		for c := range 14 {
-			if seen.Contains(rc{r, c}) {
-				fmt.Print("O")
-			} else {
-				fmt.Print(".")
-			}
-		}
-		fmt.Print("\n")
+	// We did the DFS on nodes, but we actually need to calculate the distinct
+	// tiles.
+	tiles := collections.NewSet[rc]()
+	for node := range seen.Iter() {
+		tiles.Add(node.pos)
 	}
 
-	fmt.Println(len(seen))
-
-	// return operator.CrummyTernary(part2, numPaths, len(ends))
+	fmt.Println("part 2:", len(tiles))
 }
