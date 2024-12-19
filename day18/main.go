@@ -1,8 +1,8 @@
 package main
 
 import (
+	"cmp"
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/mmcclimon/advent-2024/advent/collections"
@@ -40,46 +40,32 @@ func part1(grid collections.Set[xy], size int) {
 	dist := make(map[xy]int, size*size)
 	prev := make(map[xy]xy, size*size)
 
-	q := collections.NewSet[xy]()
-
-	for y := range size + 1 {
-		for x := range size + 1 {
-			pos := xy{x, y}
-			q.Add(pos)
-			dist[pos] = math.MaxInt
-		}
-	}
+	q := collections.NewMinQueue(func(a, b xy) int {
+		return cmp.Compare(dist[a], dist[b])
+	})
 
 	dist[xy{0, 0}] = 0
+	q.Insert(xy{0, 0})
 
-	for len(q) > 0 {
-		cur := q.Peek()
-		for pos := range q.Iter() {
-			if dist[pos] <= dist[cur] {
-				cur = pos
-			}
-		}
-
-		q.Delete(cur)
+	for q.Len() > 0 {
+		cur := q.ExtractMin()
+		// fmt.Println("looking at", cur, dist[cur])
 
 		if cur == (xy{size, size}) {
 			fmt.Println("part 1:", dist[cur])
 			return
 		}
 
+		// fmt.Println(dist[cur])
 		for _, v := range neighbors(grid, size, cur) {
-			if !q.Contains(v) {
-				continue
-			}
-
 			alt := dist[cur] + 1
 			if dist[v] == 0 || alt < dist[v] {
 				dist[v] = alt
+				q.Insert(v)
 				prev[v] = cur
 			}
 		}
 	}
-
 }
 
 func neighbors(grid collections.Set[xy], size int, start xy) []xy {
