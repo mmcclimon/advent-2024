@@ -27,15 +27,25 @@ func main() {
 		grid.Add(xy{pos[0], pos[1]})
 
 		done++
+
+		if done < nItems {
+			continue
+		}
+
+		dist := shortestPath(grid, size)
+
 		if done == nItems {
+			fmt.Println("part 1:", dist)
+		}
+
+		if dist == -1 {
+			fmt.Println("part 2:", line)
 			break
 		}
 	}
-
-	part1(grid, size)
 }
 
-func part1(grid collections.Set[xy], size int) {
+func shortestPath(grid collections.Set[xy], size int) int {
 	// dijkstra, much more straightforward than day 16
 	dist := make(map[xy]int, size*size)
 	prev := make(map[xy]xy, size*size)
@@ -52,8 +62,7 @@ func part1(grid collections.Set[xy], size int) {
 		// fmt.Println("looking at", cur, dist[cur])
 
 		if cur == (xy{size, size}) {
-			fmt.Println("part 1:", dist[cur])
-			return
+			return dist[cur]
 		}
 
 		// fmt.Println(dist[cur])
@@ -66,6 +75,8 @@ func part1(grid collections.Set[xy], size int) {
 			}
 		}
 	}
+
+	return -1
 }
 
 func neighbors(grid collections.Set[xy], size int, start xy) []xy {
