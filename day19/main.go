@@ -2,27 +2,30 @@ package main
 
 import (
 	"fmt"
-	"regexp"
-	"slices"
+	"iter"
 	"strings"
 
+	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/input"
 )
 
 func main() {
-	hunks := slices.Collect(input.New().Hunks())
+	next, stop := iter.Pull(input.New().Lines())
+	defer stop()
 
-	towels := strings.Split(hunks[0][0], ", ")
-	re := regexp.MustCompile("^(?:" + strings.Join(towels, "|") + ")+$")
+	line, ok := next()
+	assert.True(ok, "pulled line")
+
+	towels := strings.Split(line, ", ")
 
 	p1, p2 := 0, 0
-	for _, line := range hunks[1] {
-		if !re.MatchString(line) {
-			continue
-		}
+	for line, ok := next(); ok; line, ok = next() {
+		n := try(towels, line)
+		p2 += n
 
-		p1++
-		p2 += try(towels, line)
+		if n > 0 {
+			p1++
+		}
 	}
 
 	fmt.Println("part 1:", p1)
