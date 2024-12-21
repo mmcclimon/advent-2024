@@ -3,7 +3,11 @@ package main
 import (
 	"cmp"
 	"fmt"
+	"sync/atomic"
 
+	"golang.org/x/sync/errgroup"
+
+	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/collections"
 	"github.com/mmcclimon/advent-2024/advent/input"
 )
@@ -51,50 +55,60 @@ func makeDist(grid map[rc]rune, start rc) map[rc]int {
 	return dist
 }
 
-func findShortcuts(grid map[rc]rune, path map[rc]int, shortcutLen int) int {
-	total := 0
+func findShortcuts(grid map[rc]rune, path map[rc]int, shortcutLen int) int64 {
+	var eg errgroup.Group
+	eg.SetLimit(32)
+
+	var total atomic.Int64
 
 	for start, thisDist := range path {
 		if grid[start] == 'E' {
 			continue
 		}
 
-		// another day, another dijkstra
-		dist := make(map[rc]int, shortcutLen*shortcutLen)
-		q := collections.NewMinQueue(func(a, b rc) int {
-			return cmp.Compare(dist[a], dist[b])
-		})
+		eg.Go(func() error {
+			// another day, another dijkstra
+			dist := make(map[rc]int, shortcutLen*shortcutLen)
+			q := collections.NewMinQueue(func(a, b rc) int {
+				return cmp.Compare(dist[a], dist[b])
+			})
 
-		dist[start] = 0
-		q.Insert(start)
+			dist[start] = 0
+			q.Insert(start)
 
-		for q.Len() > 0 {
-			cur := q.ExtractMin()
+			for q.Len() > 0 {
+				cur := q.ExtractMin()
 
-			for _, v := range neighbors(grid, cur) {
-				alt := dist[cur] + 1
-				_, haveDist := dist[v]
+				for _, v := range neighbors(grid, cur) {
+					alt := dist[cur] + 1
+					_, haveDist := dist[v]
 
-				if alt <= shortcutLen && (!haveDist || alt < dist[v]) {
-					dist[v] = alt
-					q.Insert(v)
+					if alt <= shortcutLen && (!haveDist || alt < dist[v]) {
+						dist[v] = alt
+						q.Insert(v)
+					}
 				}
 			}
-		}
 
-		// now, check all the new distances and sum up the ones where the shortcut
-		// is at least 100.
-		for finish, newDist := range dist {
-			haveDist := path[finish]
-			alt := thisDist + newDist
+			// now, check all the new distances and sum up the ones where the shortcut
+			// is at least 100.
+			for finish, newDist := range dist {
+				haveDist := path[finish]
+				alt := thisDist + newDist
 
-			if alt < haveDist && haveDist-alt >= 100 {
-				total++
+				if alt < haveDist && haveDist-alt >= 100 {
+					total.Add(1)
+				}
 			}
-		}
+
+			return nil
+		})
 	}
 
-	return total
+	err := eg.Wait()
+	assert.Nil(err)
+
+	return total.Load()
 }
 
 func neighbors(grid map[rc]rune, pos rc) []rc {
