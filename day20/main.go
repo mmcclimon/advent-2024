@@ -3,12 +3,9 @@ package main
 import (
 	"cmp"
 	"fmt"
-	"maps"
-	"slices"
 
 	"github.com/mmcclimon/advent-2024/advent/collections"
 	"github.com/mmcclimon/advent-2024/advent/input"
-	"github.com/mmcclimon/advent-2024/advent/mathx"
 )
 
 type rc struct{ r, c int }
@@ -27,8 +24,8 @@ func main() {
 	}
 
 	dist := makeDist(grid, start)
-	part1(grid, dist)
-	part2(grid, dist)
+	fmt.Println("part 1:", findShortcuts(grid, dist, 2))
+	fmt.Println("part 2:", findShortcuts(grid, dist, 20))
 }
 
 func makeDist(grid map[rc]rune, start rc) map[rc]int {
@@ -54,113 +51,50 @@ func makeDist(grid map[rc]rune, start rc) map[rc]int {
 	return dist
 }
 
-func part1(grid map[rc]rune, dist map[rc]int) {
-	shortcuts := make(map[int]int)
-
-	for pos, thisDist := range dist {
-		if grid[pos] == 'E' {
-			continue
-		}
-
-		for _, vec := range []rc{
-			{-1, 0},
-			{1, 0},
-			{0, -1},
-			{0, 1},
-		} {
-			candidate := rc{pos.r + vec.r, pos.c + vec.c}
-			if grid[candidate] != '#' {
-				continue
-			}
-
-			finish := dist[rc{pos.r + 2*vec.r, pos.c + 2*vec.c}]
-			if finish == 0 || finish < thisDist {
-				continue
-			}
-
-			sl := finish - thisDist - 2
-			shortcuts[sl]++
-		}
-	}
-
+func findShortcuts(grid map[rc]rune, path map[rc]int, shortcutLen int) int {
 	total := 0
-	for k, v := range shortcuts {
-		if k >= 100 {
-			total += v
-		}
-	}
 
-	fmt.Println("part 1:", total)
-}
-
-func part2(grid map[rc]rune, path map[rc]int) {
-	shortcuts := make(map[int]int)
-
-	for pos, thisDist := range path {
-		if grid[pos] == 'E' {
+	for start, thisDist := range path {
+		if grid[start] == 'E' {
 			continue
 		}
 
-		dist := make(map[rc]int, len(grid))
-
+		// another day, another dijkstra
+		dist := make(map[rc]int, shortcutLen*shortcutLen)
 		q := collections.NewMinQueue(func(a, b rc) int {
 			return cmp.Compare(dist[a], dist[b])
 		})
 
-		dist[pos] = 0
-		q.Insert(pos)
+		dist[start] = 0
+		q.Insert(start)
 
 		for q.Len() > 0 {
 			cur := q.ExtractMin()
 
-			if grid[cur] == 'E' {
-				continue
-			}
-
-			// We do 25 here because the dijkstra distance isn't exactly the thing
-			// we want (apparently).
 			for _, v := range neighbors(grid, cur) {
 				alt := dist[cur] + 1
 				_, haveDist := dist[v]
-				if alt <= 25 && (!haveDist || alt < dist[v]) {
+
+				if alt <= shortcutLen && (!haveDist || alt < dist[v]) {
 					dist[v] = alt
 					q.Insert(v)
 				}
 			}
 		}
 
-		for finish := range dist {
-			haveDist, onPath := path[finish]
-			if !onPath {
-				continue
-			}
-
-			// I don't know why the taxicab distance is sometimes not the same as
-			// the dijkstra gistance, but the taxicab math makes the example work
-			// out correctly.
-			newDist := mathx.Abs(pos.r-finish.r) + mathx.Abs(pos.c-finish.c)
-			if newDist > 20 {
-				continue
-			}
-
+		// now, check all the new distances and sum up the ones where the shortcut
+		// is at least 100.
+		for finish, newDist := range dist {
+			haveDist := path[finish]
 			alt := thisDist + newDist
 
-			if alt < haveDist {
-				shortcuts[haveDist-alt]++
+			if alt < haveDist && haveDist-alt >= 100 {
+				total++
 			}
 		}
 	}
 
-	total := 0
-	for _, k := range slices.Sorted(maps.Keys(shortcuts)) {
-		if k < 100 {
-			continue
-		}
-
-		total += shortcuts[k]
-	}
-
-	fmt.Println("part 2:", total)
+	return total
 }
 
 func neighbors(grid map[rc]rune, pos rc) []rc {
