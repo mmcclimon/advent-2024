@@ -9,10 +9,11 @@ import (
 )
 
 type PRNG struct {
-	secret int
-	orig   int
-	rands  []int
-	deltas []int
+	secret   int
+	orig     int
+	rands    []int
+	deltas   []int
+	deltaIdx map[Seq]int
 }
 
 type Seq struct {
@@ -60,10 +61,11 @@ func main() {
 
 func NewRNG(secret int) *PRNG {
 	return &PRNG{
-		secret: secret,
-		orig:   secret,
-		rands:  make([]int, 0, 2001),
-		deltas: make([]int, 0, 2000),
+		secret:   secret,
+		orig:     secret,
+		rands:    make([]int, 0, 2001),
+		deltas:   make([]int, 0, 2000),
+		deltaIdx: make(map[Seq]int),
 	}
 }
 
@@ -73,6 +75,16 @@ func (r *PRNG) Prefill() {
 	for i := range 2000 {
 		r.rands = append(r.rands, r.Rand())
 		r.deltas = append(r.deltas, (r.rands[i+1]%10)-(r.rands[i]%10))
+
+		// at i=3, 0:4
+		if i > 3 {
+			start := i - 3
+			seq := seqFromSlice(r.deltas[start : i+1])
+			_, ok := r.deltaIdx[seq]
+			if !ok {
+				r.deltaIdx[seq] = start
+			}
+		}
 	}
 }
 
@@ -94,22 +106,20 @@ func (r *PRNG) mix(n int) {
 func (r *PRNG) Deltas() collections.Set[Seq] {
 	distinct := collections.NewSet[Seq]()
 
-	for i := range 2000 - 3 {
-		distinct.Add(seqFromSlice(r.deltas[i : i+4]))
+	for seq := range r.deltaIdx {
+		distinct.Add(seq)
 	}
 
 	return distinct
 }
 
 func (r *PRNG) BuyAt(seq Seq) int {
-	for i := range 2000 - 3 {
-		s := seqFromSlice(r.deltas[i : i+4])
-		if s == seq {
-			return r.rands[i+4] % 10
-		}
+	start, ok := r.deltaIdx[seq]
+	if !ok {
+		return 0
 	}
 
-	return 0
+	return r.rands[start+4] % 10
 }
 
 func seqFromSlice(s []int) Seq {
