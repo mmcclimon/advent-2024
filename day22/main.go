@@ -2,10 +2,13 @@ package main
 
 import (
 	"fmt"
+	"sync"
 
+	"github.com/mmcclimon/advent-2024/advent/assert"
 	"github.com/mmcclimon/advent-2024/advent/collections"
 	"github.com/mmcclimon/advent-2024/advent/conv"
 	"github.com/mmcclimon/advent-2024/advent/input"
+	"golang.org/x/sync/errgroup"
 )
 
 type PRNG struct {
@@ -36,23 +39,29 @@ func main() {
 		p1 += rng.Nth(2000)
 	}
 
-	done := 0
+	var eg errgroup.Group
+	eg.SetLimit(32)
+
+	var counts sync.Map
+
 	for seq := range allDeltas {
-		if done%100 == 0 {
-			fmt.Print("\r", done)
-		}
+		eg.Go(func() error {
+			bananas := 0
+			for _, buyer := range buyers {
+				bananas += buyer.BuyAt(seq)
+			}
 
-		done++
-
-		bananas := 0
-		for _, buyer := range buyers {
-			bananas += buyer.BuyAt(seq)
-		}
-
-		p2 = max(p2, bananas)
+			counts.Store(seq, bananas)
+			return nil
+		})
 	}
 
-	fmt.Print("\n")
+	assert.Nil(eg.Wait())
+
+	counts.Range(func(k, v any) bool {
+		p2 = max(p2, v.(int))
+		return true
+	})
 
 	fmt.Println("part 1:", p1)
 	fmt.Println("part 2:", p2)
