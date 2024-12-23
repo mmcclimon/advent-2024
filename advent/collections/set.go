@@ -2,6 +2,7 @@ package collections
 
 import (
 	"iter"
+	"slices"
 )
 
 type Set[T comparable] map[T]struct{}
@@ -15,6 +16,15 @@ func NewSet[T comparable](elems ...T) Set[T] {
 	}
 
 	return Set[T](s)
+}
+
+func NewSetFromIter[T comparable](iterator iter.Seq[T]) Set[T] {
+	s := NewSet[T]()
+	for elem := range iterator {
+		s[elem] = unit
+	}
+
+	return s
 }
 
 func (s Set[T]) Add(elems ...T) {
@@ -54,8 +64,32 @@ func (s Set[T]) Iter() iter.Seq[T] {
 	}
 }
 
+func (s Set[T]) ToSlice() []T {
+	return slices.Collect(s.Iter())
+}
+
 func (s Set[T]) Extend(other Set[T]) {
 	for elem := range other.Iter() {
 		s.Add(elem)
 	}
+}
+
+func (s Set[T]) Clone() Set[T] {
+	dupe := make(map[T]struct{}, len(s))
+	for k := range s {
+		dupe[k] = unit
+	}
+	return dupe
+}
+
+func (s Set[T]) Intersection(other Set[T]) Set[T] {
+	ret := make(map[T]struct{})
+
+	for k := range s {
+		if other.Contains(k) {
+			ret[k] = unit
+		}
+	}
+
+	return ret
 }
