@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"slices"
 	"strings"
 
@@ -21,18 +22,23 @@ func main() {
 		graph[r] = append(graph[r], l)
 	}
 
+	part1(graph)
+	part2(graph)
+}
+
+func part1(graph Graph) {
 	trios := collections.NewSet[Trio]()
 
-	// consider only Ts
 	for k := range graph {
+		// consider only Ts
 		if k[0] != 't' {
 			continue
 		}
 
-		trios.Extend(find(graph, k))
+		trios.Extend(findTrios(graph, k))
 	}
 
-	fmt.Println(len(trios))
+	fmt.Println("part 1:", len(trios))
 }
 
 type Trio struct{ a, b, c string }
@@ -44,7 +50,7 @@ func newTrio(a, b, c string) Trio {
 }
 
 // This is stupid but totally works.
-func find(graph Graph, start string) collections.Set[Trio] {
+func findTrios(graph Graph, start string) collections.Set[Trio] {
 	seen := collections.NewSet[Trio]()
 
 	for _, first := range graph[start] {
@@ -62,4 +68,50 @@ func find(graph Graph, start string) collections.Set[Trio] {
 	}
 
 	return seen
+}
+
+func part2(graph Graph) {
+	p := collections.NewSetFromIter(maps.Keys(graph))
+
+	found := BK(graph, collections.NewSet[string](), p, collections.NewSet[string]())
+
+	var longest []string
+
+	for _, clique := range found {
+		s := clique.ToSlice()
+		if len(s) > len(longest) {
+			longest = s
+		}
+	}
+
+	slices.Sort(longest)
+	fmt.Println("part 2:", strings.Join(longest, ","))
+
+}
+
+// This is the Bron-Kerbosch algorithm.
+func BK(graph Graph, r, p, x collections.Set[string]) []collections.Set[string] {
+	ret := make([]collections.Set[string], 0)
+
+	if len(p) == 0 && len(x) == 0 {
+		ret = append(ret, r)
+	}
+
+	for _, v := range slices.Collect(p.Iter()) {
+		neighbors := collections.NewSet(graph[v]...)
+
+		r2 := r.Clone()
+		r2.Add(v)
+
+		p2 := p.Intersection(neighbors)
+		x2 := x.Intersection(neighbors)
+
+		// recurse, recurse!
+		ret = append(ret, BK(graph, r2, p2, x2)...)
+
+		p.Delete(v)
+		x.Add(v)
+	}
+
+	return ret
 }
