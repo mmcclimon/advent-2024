@@ -25,33 +25,80 @@ type Gate struct {
 func main() {
 	hunks := slices.Collect(input.New().Hunks())
 
-	re := regexp.MustCompile(`(\w+) (AND|OR|XOR) (\w+) -> (\w+)`)
+	x, y := getXY(hunks[0])
+	lookup := makeGates(hunks[1])
+	result := run(lookup, x, y)
+	fmt.Println("part 1:", result)
+}
 
+var gateRE = regexp.MustCompile(`(\w+) (AND|OR|XOR) (\w+) -> (\w+)`)
+
+func makeGates(lines []string) map[string][]*Gate {
 	lookup := make(map[string][]*Gate)
 
-	for _, line := range hunks[1] {
-		m := re.FindStringSubmatch(line)
+	for _, line := range lines {
+		m := gateRE.FindStringSubmatch(line)
 		in1, in2, op, out := m[1], m[3], m[2], m[4]
 		gate := &Gate{in1, in2, op, out, nil, nil, false, 0}
 		lookup[in1] = append(lookup[in1], gate)
 		lookup[in2] = append(lookup[in2], gate)
 	}
 
-	q := collections.NewDeque[*Gate]()
+	return lookup
+}
 
-	for _, line := range hunks[0] {
+func getXY(lines []string) (int, int) {
+	var x, y int
+
+	for _, line := range lines {
 		bits := strings.Split(line, ": ")
 		wire := bits[0]
-		n := conv.Atoi(bits[1])
 
-		for _, gate := range lookup[wire] {
-			assert.True(gate != nil, wire)
-			gate.Input(wire, n)
+		which := wire[0]
+		shift := conv.Atoi(wire[1:])
 
-			// fmt.Println("INPUT", gate, wire, n)
+		n := conv.Atoi(bits[1]) << shift
+
+		switch which {
+		case 'x':
+			x |= n
+		case 'y':
+			y |= n
+		}
+
+		/*
+
+		 */
+	}
+
+	return x, y
+}
+
+func run(lookup map[string][]*Gate, x, y int) int {
+	q := collections.NewDeque[*Gate]()
+
+	for i := range 45 {
+		xBit := (x & (1 << i)) >> i
+		xWire := fmt.Sprintf("x%02d", i)
+		for _, gate := range lookup[xWire] {
+			assert.True(gate != nil, xWire)
+			gate.Input(xWire, xBit)
+
+			// fmt.Printf("%s, %0b, %s\n", xWire, xBit, gate)
+			if gate.IsReady() {
+				q.Append(gate)
+			}
+		}
+
+		yBit := (y & (1 << i)) >> i
+		yWire := fmt.Sprintf("y%02d", i)
+		for _, gate := range lookup[yWire] {
+			assert.True(gate != nil, yWire)
+			gate.Input(yWire, yBit)
+
+			// fmt.Printf("%s, %0b, %s\n", yWire, yBit, gate)
 
 			if gate.IsReady() {
-				// fmt.Println("gate is ready", gate)
 				q.Append(gate)
 			}
 		}
@@ -68,16 +115,8 @@ func main() {
 		out := gate.out
 
 		for _, g2 := range lookup[out] {
-
-			// if !ok {
-			// 	fmt.Println("cannot find output gate", out, gate)
-			// 	continue
-			// }
-
 			assert.True(g2 != nil, fmt.Sprintf("got gate for %s", out))
 			g2.Input(out, gate.Output())
-
-			// fmt.Println("input", g2, out)
 
 			if g2.IsReady() {
 				q.Append(g2)
@@ -85,6 +124,11 @@ func main() {
 		}
 	}
 
+	return collectResult(lookup)
+}
+
+func collectResult(lookup map[string][]*Gate) int {
+	// find the output
 	zs := make(map[string]int)
 
 	for _, gates := range lookup {
@@ -105,14 +149,10 @@ func main() {
 			break
 		}
 
-		n := bit << i
-
-		result |= n
-
+		result |= bit << i
 	}
 
-	fmt.Println(result)
-
+	return result
 }
 
 func (g *Gate) String() string {
