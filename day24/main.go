@@ -29,6 +29,25 @@ func main() {
 	lookup := makeGates(hunks[1])
 	result := run(lookup, x, y)
 	fmt.Println("part 1:", result)
+
+	// This is just a loop to print out where things look awry, then I actually
+	// solved by squinting at graphviz output.
+	for i := range 45 {
+		x := 1 << i
+		y := 1
+
+		lookup := makeGates(hunks[1])
+		run(lookup, x, y)
+
+		result := collectResult(lookup)
+
+		//nolint:staticcheck
+		if result != x+y {
+			fmt.Printf("BAD %d + %d != %d (%d) \n", x, y, result, i)
+		} else {
+			// fmt.Printf("OK  %d + %d = %d\n", x, y, result)
+		}
+	}
 }
 
 var gateRE = regexp.MustCompile(`(\w+) (AND|OR|XOR) (\w+) -> (\w+)`)
@@ -84,7 +103,6 @@ func run(lookup map[string][]*Gate, x, y int) int {
 			assert.True(gate != nil, xWire)
 			gate.Input(xWire, xBit)
 
-			// fmt.Printf("%s, %0b, %s\n", xWire, xBit, gate)
 			if gate.IsReady() {
 				q.Append(gate)
 			}
@@ -95,8 +113,6 @@ func run(lookup map[string][]*Gate, x, y int) int {
 		for _, gate := range lookup[yWire] {
 			assert.True(gate != nil, yWire)
 			gate.Input(yWire, yBit)
-
-			// fmt.Printf("%s, %0b, %s\n", yWire, yBit, gate)
 
 			if gate.IsReady() {
 				q.Append(gate)
@@ -109,8 +125,6 @@ func run(lookup map[string][]*Gate, x, y int) int {
 	for q.Len() > 0 {
 		gate, err := q.PopLeft()
 		assert.Nil(err)
-
-		// fmt.Println("process", gate)
 
 		out := gate.out
 
@@ -199,3 +213,14 @@ func (g *Gate) Output() int {
 	g.done = true
 	return g.val
 }
+
+/*
+
+Manual inspection
+
+jgt, mht
+z05, hdt
+z09, gbf
+z30,nbf
+
+*/
